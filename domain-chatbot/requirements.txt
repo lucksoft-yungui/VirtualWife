@@ -1,4 +1,5 @@
 urllib3==1.24.3
+numpy<2.0.0
 openai==1.12.0
 python-dotenv==1.0.0
 Django==4.2.1
@@ -31,3 +32,4 @@ faiss-cpu==1.7.4
 FlagEmbedding==1.1.7
 openai==1.12.0
 litellm==1.34.6
+zhipuai==2.1.4

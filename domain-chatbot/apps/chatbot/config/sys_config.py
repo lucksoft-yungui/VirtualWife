@@ -52,6 +52,8 @@ class SysConfig:
     def __init__(self) -> None:
         self.bilibili_live_listener = None
         self.thread_pool_manager = None
+        # Ensure attribute exists even if memory driver fails to init
+        self.memory_storage_driver = None
         self.load()
 
     def get(self):
@@ -187,6 +189,7 @@ class SysConfig:
             self.memory_storage_driver = lazy_memory_storage(
                 sys_config_json=sys_config_json, sys_cofnig=self)
         except Exception as e:
+            # Leave driver as None so callers can gracefully degrade
             logger.error("init memory_storage error: %s" % str(e))
 
         logger.info("=> Load SysConfig Success")

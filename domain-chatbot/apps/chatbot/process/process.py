@@ -50,10 +50,13 @@ class ProcessCore():
                 character)
 
             # 检索关联的短期记忆和长期记忆
-            short_history = singleton_sys_config.memory_storage_driver.search_short_memory(
-                query_text=query, you_name=you_name, role_name=role_name)
-            long_history = singleton_sys_config.memory_storage_driver.search_lang_memory(
-                query_text=query, you_name=you_name, role_name=role_name)
+            short_history = []
+            long_history = []
+            if singleton_sys_config.memory_storage_driver:
+                short_history = singleton_sys_config.memory_storage_driver.search_short_memory(
+                    query_text=query, you_name=you_name, role_name=role_name)
+                long_history = singleton_sys_config.memory_storage_driver.search_lang_memory(
+                    query_text=query, you_name=you_name, role_name=role_name)
 
             current_time = get_current_time_str()
             prompt = prompt.format(

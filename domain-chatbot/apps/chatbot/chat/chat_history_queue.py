@@ -45,8 +45,12 @@ def send_message():
         try:
             message = chat_history_queue.get()
             if (message != None and message != ''):
-                singleton_sys_config.memory_storage_driver.save(
-                    message.you_name, message.you_message, message.role_name, message.role_message)
+                driver = getattr(singleton_sys_config, "memory_storage_driver", None)
+                if driver:
+                    driver.save(
+                        message.you_name, message.you_message, message.role_name, message.role_message)
+                else:
+                    logger.debug("memory_storage_driver is not available; skip persisting chat history")
         except Exception as e:
             traceback.print_exc()
 
