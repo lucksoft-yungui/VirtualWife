@@ -130,26 +130,16 @@ def create_custom_role(request):
 @api_view(['POST'])
 def edit_custom_role(request, pk):
     data = request.data  # 获取请求的 JSON 数据
-    # 从 JSON 数据中提取字段值
-    id = data.get('id')
-    role_name = data.get('role_name')
-    persona = data.get('persona')
-    personality = data.get('personality')
-    scenario = data.get('scenario')
-    examples_of_dialogue = data.get('examples_of_dialogue')
-    custom_role_template_type = data.get('custom_role_template_type')
+    role = get_object_or_404(CustomRoleModel, pk=pk)
 
-    # 更新 CustomRoleModel 实例并保存到数据库
-    custom_role = CustomRoleModel(
-        id=id,
-        role_name=role_name,
-        persona=persona,
-        personality=personality,
-        scenario=scenario,
-        examples_of_dialogue=examples_of_dialogue,
-        custom_role_template_type=custom_role_template_type
-    )
-    custom_role.save()
+    role.role_name = data.get('role_name', role.role_name)
+    role.persona = data.get('persona', role.persona)
+    role.personality = data.get('personality', role.personality)
+    role.scenario = data.get('scenario', role.scenario)
+    role.examples_of_dialogue = data.get('examples_of_dialogue', role.examples_of_dialogue)
+    role.custom_role_template_type = data.get('custom_role_template_type', role.custom_role_template_type)
+    # role_package_id 未在前端编辑场景传递，保持原值，避免违反非空约束
+    role.save()
     return Response({"response": "Data edit to database", "code": "200"})
 
 

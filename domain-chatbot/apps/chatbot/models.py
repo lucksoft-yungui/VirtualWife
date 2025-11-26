@@ -30,7 +30,7 @@ class CustomRoleModel(models.Model):
     scenario = models.TextField()
     examples_of_dialogue = models.TextField()
     custom_role_template_type = models.CharField(max_length=50)
-    role_package_id = models.IntegerField()
+    role_package_id = models.IntegerField(default=-1, null=True, blank=True)
 
     def __str__(self):
         return self.role_name

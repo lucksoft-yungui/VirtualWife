@@ -7,6 +7,7 @@ from typing import List, Dict
 from .ollama.ollama_chat_robot import OllamaGeneration
 from .openai.openai_chat_robot import OpenAIGeneration
 from .zhipuai.zhipuai_chat_robot import ZhipuAIGeneration
+from .dashscope.dashscope_chat_robot import DashScopeGeneration
 from ..memory.zep.zep_memory import ChatHistroy
 
 
@@ -104,12 +105,26 @@ class ZhipuaiLlmModelStrategy(LlmModelStrategy):
         await self.zhipuai.chatStream(prompt, role_name, you_name, query, history, realtime_callback, conversation_end_callback)
 
 
+class DashScopeLlmModelStrategy(LlmModelStrategy):
+    def __init__(self):
+        self.dashscope = DashScopeGeneration()
+
+    def chat(self, prompt: str, role_name: str, you_name: str, query: str,
+             short_history: List[ChatHistroy], long_history: str) -> str:
+        return self.dashscope.chat(prompt, role_name, you_name, query, short_history, long_history)
+
+    async def chatStream(self, prompt: str, role_name: str, you_name: str, query: str,
+                         history: List[Dict[str, str]], realtime_callback=None, conversation_end_callback=None):
+        await self.dashscope.chatStream(prompt, role_name, you_name, query, history, realtime_callback, conversation_end_callback)
+
+
 class LlmModelDriver:
 
     def __init__(self):
         self.openai = OpenAIGeneration()
         self.ollama = OllamaLlmModelStrategy()
         self.zhipuai = ZhipuaiLlmModelStrategy()
+        self.dashscope = DashScopeLlmModelStrategy()
         self.chat_stream_lock = threading.Lock()
 
     def chat(self, prompt: str, type: str, role_name: str, you_name: str, query: str,
@@ -144,5 +159,7 @@ class LlmModelDriver:
             return self.ollama
         elif type == "zhipuai":
             return self.zhipuai
+        elif type == "dashscope":
+            return self.dashscope
         else:
             raise ValueError("Unknown type")

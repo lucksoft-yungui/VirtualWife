@@ -75,6 +75,15 @@ class SysConfig:
                 sys_config_json = json.loads(sys_config_obj.config)
         except Exception as e:
             logger.debug("=> load sys config error: %s" % str(e))
+        # 确保新增的 dashscope 配置存在，避免前端或加载时缺省字段导致异常
+        language_model_config = sys_config_json.get("languageModelConfig", {})
+        if "dashscope" not in language_model_config:
+            language_model_config["dashscope"] = {
+                "DASHSCOPE_API_KEY": "sk-",
+                "DASHSCOPE_MODEL_NAME": "qwen-max",
+                "DASHSCOPE_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+            sys_config_json["languageModelConfig"] = language_model_config
         return sys_config_json
 
     def save(self, sys_config_json: any):
@@ -138,6 +147,16 @@ class SysConfig:
             os.environ['ZHIPUAI_API_KEY'] = zhipuai.get("ZHIPUAI_API_KEY", "SK-")
         else:
             os.environ['ZHIPUAI_API_KEY'] = "SK-"
+
+        dashscope = sys_config_json["languageModelConfig"].get("dashscope")
+        if dashscope:
+            os.environ['DASHSCOPE_API_KEY'] = dashscope.get("DASHSCOPE_API_KEY", "sk-")
+            os.environ['DASHSCOPE_MODEL_NAME'] = dashscope.get("DASHSCOPE_MODEL_NAME", "qwen-max")
+            os.environ['DASHSCOPE_BASE_URL'] = dashscope.get("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+        else:
+            os.environ['DASHSCOPE_API_KEY'] = "sk-"
+            os.environ['DASHSCOPE_MODEL_NAME'] = "qwen-max"
+            os.environ['DASHSCOPE_BASE_URL'] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 
         # 是否开启proxy

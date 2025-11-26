@@ -38,9 +38,21 @@ import {join} from 'path';
 import {voiceData, getVoices} from '@/features/tts/ttsApi';
 
 const tabNames = ['基础设置', '自定义角色设置', '大语言模型设置', '记忆模块设置', '高级设置'];
-const llm_enums = ["openai", "ollama",'zhipuai']
+const llm_enums = ["openai", "ollama", 'zhipuai', 'dashscope']
 
 const publicDir = join(process.cwd(), 'public');
+
+const ensureDashscopeConfig = (config: GlobalConfig): GlobalConfig => {
+    const languageModelConfig = {
+        ...config.languageModelConfig,
+        dashscope: config.languageModelConfig.dashscope || {
+            DASHSCOPE_API_KEY: "sk-",
+            DASHSCOPE_MODEL_NAME: "qwen-max",
+            DASHSCOPE_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        }
+    };
+    return {...config, languageModelConfig};
+};
 
 interface TabItemProps {
     name: string;
@@ -85,11 +97,12 @@ export const Settings = ({
                          }: Props) => {
 
     const [currentTab, setCurrentTab] = useState('基础设置');
-    const [formData, setFormData] = useState(globalConfig);
+    const [formData, setFormData] = useState<GlobalConfig>(ensureDashscopeConfig(globalConfig));
     const [customRoles, setCustomRoles] = useState([custoRoleFormData]);
     const [enableProxy, setEnableProxy] = useState(false);
     const [enableLive, setEnableLive] = useState(false);
     const [conversationType, setConversationType] = useState('default');
+    const [conversationModel, setConversationModel] = useState(globalConfig.conversationConfig.languageModel);
 
     const [enableLongMemory, setEnableLongMemory] = useState(false);
     const [enableSummary, setEnableSummary] = useState(false);
@@ -118,20 +131,22 @@ export const Settings = ({
         customroleList().then(data => {
             setCustomRoles(data)
         })
-        setFormData(globalConfig);
-        setConversationType(globalConfig.conversationConfig.conversationType)
-        setEnableLongMemory(globalConfig.memoryStorageConfig.enableLongMemory)
-        setEnableSummary(globalConfig.memoryStorageConfig.enableSummary)
-        setEnableReflection(globalConfig.memoryStorageConfig.enableSummary)
-        setEnableProxy(globalConfig.enableProxy)
-        setEnableLive(globalConfig.enableLive)
-        setSelectedBackgroundId(globalConfig.background_id)
+        const normalizedConfig = ensureDashscopeConfig({...globalConfig});
+        setFormData(normalizedConfig);
+        setConversationType(normalizedConfig.conversationConfig.conversationType)
+        setConversationModel(normalizedConfig.conversationConfig.languageModel)
+        setEnableLongMemory(normalizedConfig.memoryStorageConfig.enableLongMemory)
+        setEnableSummary(normalizedConfig.memoryStorageConfig.enableSummary)
+        setEnableReflection(normalizedConfig.memoryStorageConfig.enableSummary)
+        setEnableProxy(normalizedConfig.enableProxy)
+        setEnableLive(normalizedConfig.enableLive)
+        setSelectedBackgroundId(normalizedConfig.background_id)
         setSelectedVrmModelId(-1)
         queryBackground().then(data => setBackgroundModels(data))
         queryUserVrmModels().then(data => setUserVrmModels(data))
         querySystemVrmModels().then(data => setSystemVrmModels(data))
-        setTTSType(globalConfig.ttsConfig.ttsType);
-        getVoices(globalConfig.ttsConfig.ttsType).then(data => setVoices(data))
+        setTTSType(normalizedConfig.ttsConfig.ttsType);
+        getVoices(normalizedConfig.ttsConfig.ttsType).then(data => setVoices(data))
     }, [])
 
 
@@ -296,10 +311,18 @@ export const Settings = ({
                     <div className="field">
                         <label>选择大语言模型:</label>
                         <select
-                            defaultValue={formData.conversationConfig.languageModel}
+                            value={conversationModel}
                             onChange={e => {
-                                formData.conversationConfig.languageModel = e.target.value;
-                                setFormData(formData);
+                                const nextModel = e.target.value;
+                                const nextFormData = {
+                                    ...formData,
+                                    conversationConfig: {
+                                        ...formData.conversationConfig,
+                                        languageModel: nextModel
+                                    }
+                                };
+                                setConversationModel(nextModel);
+                                setFormData(nextFormData);
                             }}>
                             {
                                 llm_enums.map(llm => (
@@ -307,6 +330,46 @@ export const Settings = ({
                                 ))
                             }
                         </select>
+                        {
+                            conversationModel === 'dashscope' && (
+                                <div className="field mt-4">
+                                    <label>DashScope（百炼）API Key</label>
+                                    <input type="text"
+                                           value={formData.languageModelConfig.dashscope?.DASHSCOPE_API_KEY || ""}
+                                           onChange={e => {
+                                               const nextFormData = {
+                                                   ...formData,
+                                                   languageModelConfig: {
+                                                       ...formData.languageModelConfig,
+                                                       dashscope: {
+                                                           ...(formData.languageModelConfig.dashscope || {}),
+                                                           DASHSCOPE_API_KEY: e.target.value
+                                                       }
+                                                   }
+                                               };
+                                               setFormData(nextFormData);
+                                           }}
+                                    />
+                                    <label>DashScope 模型名称</label>
+                                    <input type="text"
+                                           value={formData.languageModelConfig.dashscope?.DASHSCOPE_MODEL_NAME || ""}
+                                           onChange={e => {
+                                               const nextFormData = {
+                                                   ...formData,
+                                                   languageModelConfig: {
+                                                       ...formData.languageModelConfig,
+                                                       dashscope: {
+                                                           ...(formData.languageModelConfig.dashscope || {}),
+                                                           DASHSCOPE_MODEL_NAME: e.target.value
+                                                       }
+                                                   }
+                                               };
+                                               setFormData(nextFormData);
+                                           }}
+                                    />
+                                </div>
+                            )
+                        }
                     </div>
                 </div>
 
@@ -480,6 +543,66 @@ export const Settings = ({
                                onChange={e => {
                                    formData.languageModelConfig.zhipuai.ZHIPUAI_API_KEY = e.target.value
                                    setFormData(formData);
+                               }}
+                        />
+                    </div>
+                </div>
+                <div className="section">
+                    <div className="title">DashScope（百炼）配置</div>
+                    <div className="field">
+                        <label>DASHSCOPE_API_KEY</label>
+                        <input type="text"
+                               defaultValue={formData.languageModelConfig.dashscope?.DASHSCOPE_API_KEY}
+                               onChange={e => {
+                                   const nextFormData = {
+                                       ...formData,
+                                       languageModelConfig: {
+                                           ...formData.languageModelConfig,
+                                           dashscope: {
+                                               ...(formData.languageModelConfig.dashscope || {}),
+                                               DASHSCOPE_API_KEY: e.target.value
+                                           }
+                                       }
+                                   };
+                                   setFormData(nextFormData);
+                               }}
+                        />
+                    </div>
+                    <div className="field">
+                        <label>DASHSCOPE_MODEL_NAME</label>
+                        <input type="text"
+                               defaultValue={formData.languageModelConfig.dashscope?.DASHSCOPE_MODEL_NAME}
+                               onChange={e => {
+                                   const nextFormData = {
+                                       ...formData,
+                                       languageModelConfig: {
+                                           ...formData.languageModelConfig,
+                                           dashscope: {
+                                               ...(formData.languageModelConfig.dashscope || {}),
+                                               DASHSCOPE_MODEL_NAME: e.target.value
+                                           }
+                                       }
+                                   };
+                                   setFormData(nextFormData);
+                               }}
+                        />
+                    </div>
+                    <div className="field">
+                        <label>DASHSCOPE_BASE_URL</label>
+                        <input type="text"
+                               defaultValue={formData.languageModelConfig.dashscope?.DASHSCOPE_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1"}
+                               onChange={e => {
+                                   const nextFormData = {
+                                       ...formData,
+                                       languageModelConfig: {
+                                           ...formData.languageModelConfig,
+                                           dashscope: {
+                                               ...(formData.languageModelConfig.dashscope || {}),
+                                               DASHSCOPE_BASE_URL: e.target.value
+                                           }
+                                       }
+                                   };
+                                   setFormData(nextFormData);
                                }}
                         />
                     </div>
@@ -1108,4 +1231,3 @@ export const Settings = ({
         </div>
     )
 };
-

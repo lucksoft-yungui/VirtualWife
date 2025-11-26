@@ -22,6 +22,11 @@ export const initialFormData = {
         },
         "zhipuai":  {
             "ZHIPUAI_API_KEY": "sk"
+        },
+        "dashscope": {
+            "DASHSCOPE_API_KEY": "sk-",
+            "DASHSCOPE_MODEL_NAME": "qwen-max",
+            "DASHSCOPE_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1"
         }
     },
     "characterConfig": {
