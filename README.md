@@ -169,11 +169,11 @@ docker run -p 8080:8080 \
   virtualwife-all:latest
 
 # 代理
-docker run --name vw -p 8080:8080 \
+docker run --name vw -p 28080:8080 \
   -e HTTP_PROXY=http://host.docker.internal:7890 \
   -e HTTPS_PROXY=http://host.docker.internal:7890 \
   -v /tmp/vwlogs:/var/log \
-  virtualwife-all:latest
+  virtualwife-all:arm
 ```
 
 - 访问地址：`http://localhost:8080`
