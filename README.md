@@ -148,6 +148,46 @@ OLLAMA_API_URL配置说明：如果是docker启动，请使用http://host.docker
 
 > 保存成功后，无需重启服务，可以开始聊天了，如果出现异常请查阅[FAQ](FAQ.md)
 
+# Docker 单容器部署（前后端一体、统一 8080 端口）
+
+> 适用于想要一次打包前后端，并通过 Nginx 反代仅暴露一个端口的场景。
+
+## 快速使用
+```bash
+# 在项目根目录构建镜像
+docker build -t virtualwife-all:latest .
+
+
+docker run --name vw -p 28080:8080 virtualwife-all:latest
+
+# 运行容器（示例）
+docker run -p 8080:8080 \
+  -e OPENAI_API_KEY=xxx \
+  -e DASHSCOPE_API_KEY=xxx \
+  -e ZHIPUAI_API_KEY=xxx \
+  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+  virtualwife-all:latest
+
+# 代理
+docker run --name vw -p 8080:8080 \
+  -e HTTP_PROXY=http://host.docker.internal:7890 \
+  -e HTTPS_PROXY=http://host.docker.internal:7890 \
+  -v /tmp/vwlogs:/var/log \
+  virtualwife-all:latest
+```
+
+- 访问地址：`http://localhost:8080`
+- 前端由 Nginx 反向代理至 Next.js，后端接口由 Nginx 反向代理至 Django（ASGI，含 WebSocket），音频请求同样走 `/api/`。
+
+## 镜像说明
+- `Dockerfile`：多阶段构建，Node 16 构建 Next.js 静态产物，Python 3.10 venv 安装后端依赖，最终镜像内置 Nginx + Supervisor 同时启动前端/后端。
+- Nginx 默认监听 `8080`，配置见 `docker/nginx.conf`。
+- 后端启动脚本 `docker/start-backend.sh`：自动执行迁移并用 daphne 启动 ASGI。
+
+## 自定义
+- 如需更改对外端口，修改 `docker/nginx.conf` 的 `listen` 或运行容器时调整 `-p` 映射。
+- 若需替换/新增环境变量（如代理、模型配置），可在 `docker run` 时添加 `-e KEY=VALUE`。
+
 # LICENSE
 
 依据 MIT 协议，使用者需自行承担使用本项目的风险与责任，本开源项目开发者与此无关。
@@ -163,5 +203,6 @@ OLLAMA_API_URL配置说明：如果是docker启动，请使用http://host.docker
 
 [![Star History Chart](https://api.star-history.com/svg?repos=yakami129/VirtualWife&type=Date)](https://star-history.com/#yakami129/VirtualWife)
 
+export https_proxy=http://host.docker.internal:7890;export http_proxy=http://host.docker.internal:7890;export all_proxy=socks5://host.docker.internal:7890
 
 

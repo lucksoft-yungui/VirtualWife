@@ -6,15 +6,16 @@ let baseUrl = "";
 if (environment === "development") {
   baseUrl = ":8000";
 } else if (environment === "production") {
-  baseUrl = "/api/chatbot";
+  baseUrl = "/api";
 } else {
   throw new Error("未知环境变量");
 }
 
 
 export async function connect(): Promise<WebSocket> {
-    const hostname = window.location.hostname;
-    const socket = new WebSocket(`ws://${hostname}${baseUrl}/ws/`);
+    // 使用 host 以包含端口（如 8080），否则默认 80 端口会导致连接失败
+    const host = window.location.host;
+    const socket = new WebSocket(`ws://${host}${baseUrl}/ws/`);
     socket.onopen = () => {
         console.log('WebSocket connection established.');
         socket.send('connection success');

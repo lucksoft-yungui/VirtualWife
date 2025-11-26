@@ -8,12 +8,6 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 """
 
 import os
-from apps.chatbot.output.routing import websocket_urlpatterns
-from apps.chatbot.output.realtime_message_queue import RealtimeMessageQueryJobTask
-from apps.chatbot.chat.chat_history_queue import ChatHistoryMessageQueryJobTask
-from apps.chatbot.insight.insight_message_queue import InsightMessageQueryJobTask
-# from apps.chatbot.insight.bilibili.bili_live_client import bili_live_client_main
-from apps.chatbot.schedule.observe_memory import run_observe_memory_job, observe_memory_job
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
@@ -22,16 +16,23 @@ from django.urls import path
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'VirtualWife.settings')
 
+# Initialize Django ASGI application early to ensure the AppRegistry
+# is populated before importing code that may import ORM models.
+django_asgi_app = get_asgi_application()
+
+from apps.chatbot.output.routing import websocket_urlpatterns
+from apps.chatbot.output.realtime_message_queue import RealtimeMessageQueryJobTask
+from apps.chatbot.chat.chat_history_queue import ChatHistoryMessageQueryJobTask
+from apps.chatbot.insight.insight_message_queue import InsightMessageQueryJobTask
+# from apps.chatbot.insight.bilibili.bili_live_client import bili_live_client_main
+from apps.chatbot.schedule.observe_memory import run_observe_memory_job, observe_memory_job
+
 # bili_live_client_main()
 # run_observe_memory_job(60, observe_memory_job)
 
 RealtimeMessageQueryJobTask.start()
 ChatHistoryMessageQueryJobTask.start()
 InsightMessageQueryJobTask.start()
-
-# Initialize Django ASGI application early to ensure the AppRegistry
-# is populated before importing code that may import ORM models.
-django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
